@@ -31,10 +31,16 @@ public class EstoqueController {
     }
 
     // Endpoint GET: Listar todos os produtos
-    // URI: http://localhost:8080/api/produtos
     @GetMapping
     public ResponseEntity<List<Produto>> listarProdutos() {
         List<Produto> produtos = estoqueService.listarTodosProdutos();
         return ResponseEntity.ok(produtos);
+    }
+    
+    // Endpoint GET: Listar valor total por categoria
+    @GetMapping("/total-por-categoria")
+    public ResponseEntity<List<Object[]>> listarValorTotalPorCategoria() {
+        List<Object[]> totais = estoqueService.listarValorTotalPorCategoria();
+        return ResponseEntity.ok(totais);
     }
 }

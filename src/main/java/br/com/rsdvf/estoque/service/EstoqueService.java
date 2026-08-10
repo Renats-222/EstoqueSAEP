@@ -42,5 +42,10 @@ public class EstoqueService {
         return produtoRepository.findAll();
     }
     
+    // Método adicionado para o Endpoint 3: Listar valor total por categoria
+    public List<Object[]> listarValorTotalPorCategoria() {
+        return produtoRepository.findValorTotalPorCategoria();
+    }
+    
     
 }

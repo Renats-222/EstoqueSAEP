@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // @Service: Indica que esta classe gerencia a lógica e as regras de negócio
 @Service
 public class EstoqueService {
+    
 
     @Autowired
     private ProdutoRepository produtoRepository;
@@ -34,4 +36,11 @@ public class EstoqueService {
         // Salva o produto validado no MySQL
         return produtoRepository.save(produto);
     }
+    
+    // Listar todos os produtos cadastrados no MySQL
+    public List<Produto> listarTodosProdutos() {
+        return produtoRepository.findAll();
+    }
+    
+    
 }

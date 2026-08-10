@@ -51,4 +51,17 @@ public class EstoqueController {
         List<Movimento> saidas = estoqueService.listarTodasSaidas();
         return ResponseEntity.ok(saidas);
     }
+    
+    // Endpoint POST: Registrar entrada de produto
+    @PostMapping("/entradas")
+    public ResponseEntity<?> registrarEntrada(
+            @org.springframework.web.bind.annotation.RequestParam Long produtoId,
+            @org.springframework.web.bind.annotation.RequestParam java.math.BigDecimal quantidade) {
+        try {
+            Movimento movimento = estoqueService.registrarEntrada(produtoId, quantidade);
+            return ResponseEntity.ok(movimento);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

@@ -56,4 +56,25 @@ public class EstoqueService {
     public List<Movimento> listarTodasSaidas() {
         return movimentoRepository.findAllSaidasOrderByDataMovtoDesc();
     }
+    
+    public Movimento registrarEntrada(Long produtoId, BigDecimal quantidade) {
+        if (quantidade == null || quantidade.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("A quantidade de entrada deve ser maior que zero.");
+        }
+
+        Produto produto = produtoRepository.findById(produtoId)
+                .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado com o ID informado."));
+
+        // Atualiza o saldo do produto (Saldo + Quantidade)
+        produto.setSaldo(produto.getSaldo().add(quantidade));
+        produtoRepository.save(produto);
+
+        // Registra a movimentação de entrada
+        Movimento movimento = new Movimento();
+        movimento.setProduto(produto);
+        movimento.setQtd(quantidade);
+        movimento.setDataMovto(java.time.LocalDateTime.now());
+
+        return movimentoRepository.save(movimento);
+    }
 }

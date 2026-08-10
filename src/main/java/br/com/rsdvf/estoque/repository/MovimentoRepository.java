@@ -12,13 +12,26 @@ import java.util.List;
 @Repository
 public interface MovimentoRepository extends JpaRepository<Movimento, Long> {
 
-    List<Movimento> findByTipoOrderByDataMovtoDesc(String tipo);
+    @Query("SELECT m FROM Movimento m WHERE m.qtd < 0 ORDER BY m.dataMovto DESC")
+    List<Movimento> findAllSaidasOrderByDataMovtoDesc();
 
-    @Query("SELECT m FROM Movimento m WHERE m.dataMovto BETWEEN :inicio AND :fim ORDER BY m.dataMovto ASC")
-    List<Movimento> findMovimentacoesPorPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim);
+    @Query("SELECT m.produto.nome, 'UN', " +
+           "SUM(CASE WHEN m.qtd > 0 THEN m.qtd ELSE 0 END), " +
+           "SUM(CASE WHEN m.qtd < 0 THEN ABS(m.qtd) ELSE 0 END), " +
+           "SUM(m.qtd), " +
+           "SUM(CASE WHEN m.qtd > 0 THEN (m.qtd * m.produto.valorUnitario) ELSE 0 END), " +
+           "SUM(CASE WHEN m.qtd < 0 THEN (ABS(m.qtd) * m.produto.valorUnitario) ELSE 0 END) " +
+           "FROM Movimento m " +
+           "WHERE m.dataMovto BETWEEN :inicio AND :fim " +
+           "GROUP BY m.produto.nome, m.produto.valorUnitario")
+    List<Object[]> findMovimentacoesPorPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim);
 
-    @Query("SELECT m.produto.nome, SUM(m.qtd), SUM(m.qtd * m.produto.valorUnitario) " +
-           "FROM Movimento m WHERE m.tipo = 'SAIDA' AND m.dataMovto BETWEEN :inicio AND :fim " +
-           "GROUP BY m.produto.nome ORDER BY SUM(m.qtd) DESC")
+    @Query("SELECT m.produto.nome, " +
+           "SUM(ABS(m.qtd)), " +
+           "SUM(ABS(m.qtd) * m.produto.valorUnitario) " +
+           "FROM Movimento m " +
+           "WHERE m.qtd < 0 AND m.dataMovto BETWEEN :inicio AND :fim " +
+           "GROUP BY m.produto.nome " +
+           "ORDER BY SUM(ABS(m.qtd)) DESC")
     List<Object[]> findTopSaidasPorPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim);
 }

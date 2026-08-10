@@ -1,16 +1,17 @@
 package br.com.rsdvf.estoque.controller;
 
+import br.com.rsdvf.estoque.model.Movimento; // Import do Movimento adicionado
 import br.com.rsdvf.estoque.model.Produto;
 import br.com.rsdvf.estoque.service.EstoqueService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List; 
-import org.springframework.web.bind.annotation.GetMapping;
+import java.util.List;
 
 @RestController
 @RequestMapping("/produtos")
@@ -19,7 +20,7 @@ public class EstoqueController {
     @Autowired
     private EstoqueService estoqueService;
 
-    // URI: http://localhost:8080/api/produtos
+    // Endpoint POST: Cadastrar produto
     @PostMapping
     public ResponseEntity<?> cadastrarProduto(@RequestBody Produto produto) {
         try {
@@ -36,11 +37,18 @@ public class EstoqueController {
         List<Produto> produtos = estoqueService.listarTodosProdutos();
         return ResponseEntity.ok(produtos);
     }
-    
+
     // Endpoint GET: Listar valor total por categoria
     @GetMapping("/total-por-categoria")
     public ResponseEntity<List<Object[]>> listarValorTotalPorCategoria() {
         List<Object[]> totais = estoqueService.listarValorTotalPorCategoria();
         return ResponseEntity.ok(totais);
+    }
+
+    // Endpoint GET: Listar todas as saídas de produtos (Item 5 da Prova)
+    @GetMapping("/saidas")
+    public ResponseEntity<List<Movimento>> listarSaidas() {
+        List<Movimento> saidas = estoqueService.listarTodasSaidas();
+        return ResponseEntity.ok(saidas);
     }
 }

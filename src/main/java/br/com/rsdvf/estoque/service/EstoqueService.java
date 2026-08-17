@@ -77,4 +77,12 @@ public class EstoqueService {
 
         return movimentoRepository.save(movimento);
     }
+    
+    public List<Object[]> listarMovimentacoesPorPeriodo(java.time.LocalDateTime inicio, java.time.LocalDateTime fim) {
+        return movimentoRepository.findMovimentacoesPorPeriodo(inicio, fim);
+    }
+
+    public List<Object[]> listarTopSaidasPorPeriodo(java.time.LocalDateTime inicio, java.time.LocalDateTime fim) {
+        return movimentoRepository.findTopSaidasPorPeriodo(inicio, fim);
+    }
 }

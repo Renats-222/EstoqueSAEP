@@ -64,4 +64,20 @@ public class EstoqueController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    
+    @GetMapping("/movimentacoes-periodo")
+    public ResponseEntity<List<Object[]>> listarMovimentacoesPorPeriodo(
+            @org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime inicio,
+            @org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime fim) {
+        List<Object[]> relatorio = estoqueService.listarMovimentacoesPorPeriodo(inicio, fim);
+        return ResponseEntity.ok(relatorio);
+    }
+
+    @GetMapping("/top-saidas")
+    public ResponseEntity<List<Object[]>> listarTopSaidas(
+            @org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime inicio,
+            @org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime fim) {
+        List<Object[]> topSaidas = estoqueService.listarTopSaidasPorPeriodo(inicio, fim);
+        return ResponseEntity.ok(topSaidas);
+    }
 }

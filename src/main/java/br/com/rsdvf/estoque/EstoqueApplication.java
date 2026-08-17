@@ -10,4 +10,4 @@ public class EstoqueApplication {
 		SpringApplication.run(EstoqueApplication.class, args);
 	}
 
-}
+}   

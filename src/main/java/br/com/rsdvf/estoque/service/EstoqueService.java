@@ -1,88 +1,94 @@
 package br.com.rsdvf.estoque.service;
 
-import br.com.rsdvf.estoque.model.Movimento;
 import br.com.rsdvf.estoque.model.Produto;
-import br.com.rsdvf.estoque.repository.MovimentoRepository;
+import br.com.rsdvf.estoque.model.VwEstoque;
 import br.com.rsdvf.estoque.repository.ProdutoRepository;
+import br.com.rsdvf.estoque.repository.VwEstoqueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-// @Service: Indica que esta classe gerencia a lógica e as regras de negócio
 @Service
 public class EstoqueService {
 
     @Autowired
     private ProdutoRepository produtoRepository;
 
-    // Novo Repositório Injetado para o Item 5
     @Autowired
-    private MovimentoRepository movimentoRepository;
+    private VwEstoqueRepository vwEstoqueRepository;
 
     // Regra de Negócio: Validações para cadastro de produto
     public Produto cadastrarProduto(Produto produto) {
-        // Validação do Valor Unitário
         if (produto.getValorUnitario() == null || produto.getValorUnitario().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("O valor unitário deve ser maior que zero.");
         }
-
-        // Validação da Quantidade (Saldo)
         if (produto.getSaldo() == null || produto.getSaldo().compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("A quantidade inicial não pode ser negativa.");
         }
-
-        // Validação da Categoria
         if (produto.getCategoria() == null || produto.getCategoria().getId() == null) {
             throw new IllegalArgumentException("É obrigatório informar uma categoria válida para o produto.");
         }
-
-        // Salva o produto validado no MySQL
         return produtoRepository.save(produto);
     }
 
-    // Listar todos os produtos cadastrados no MySQL
+    // Listar todos os produtos
     public List<Produto> listarTodosProdutos() {
         return produtoRepository.findAll();
     }
 
-    // Método adicionado para o Endpoint 3: Listar valor total por categoria
+    // Listar valor total por categoria
     public List<Object[]> listarValorTotalPorCategoria() {
         return produtoRepository.findValorTotalPorCategoria();
     }
 
-    // Método adicionado para o Item 5: Listar saídas de produtos (qtd < 0 em ordem decrescente)
-    public List<Movimento> listarTodasSaidas() {
-        return movimentoRepository.findAllSaidasOrderByDataMovtoDesc();
-    }
-    
-    public Movimento registrarEntrada(Long produtoId, BigDecimal quantidade) {
-        if (quantidade == null || quantidade.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("A quantidade de entrada deve ser maior que zero.");
+    // Item 8: Identificar limites mínimos (0) e máximos (100) com percentual e Fallback
+    public List<Map<String, Object>> listarLimitesEstoque() {
+        List<VwEstoque> listaView = vwEstoqueRepository.findAll();
+        List<Map<String, Object>> resultado = new ArrayList<>();
+
+        // 1. TENTA USAR A VIEW: Exigência da Prova SAEP
+        if (!listaView.isEmpty()) {
+            for (VwEstoque item : listaView) {
+                BigDecimal saldo = item.getSaldo() != null ? item.getSaldo() : BigDecimal.ZERO;
+                if (saldo.compareTo(BigDecimal.ZERO) <= 0 || saldo.compareTo(new BigDecimal("100")) >= 0) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("produto", item.getNome());
+                    map.put("saldo", saldo);
+                    map.put("valorUnitario", item.getValorUnitario());
+                    map.put("valorTotalItem", item.getValorTotal()); 
+                    map.put("percentualNivelAtingido", saldo + "%");
+                    map.put("status", saldo.compareTo(BigDecimal.ZERO) <= 0 ? "LIMITE MÍNIMO ATINGIDO" : "LIMITE MÁXIMO ATINGIDO");
+                    resultado.add(map);
+                }
+            }
+        } 
+        // 2. FALLBACK: Se a view no banco falhar ou vier vazia, busca direto da tabela Produto (Garante que a API funcione!)
+        else {
+            List<Produto> listaProdutos = produtoRepository.findAll();
+            for (Produto item : listaProdutos) {
+                BigDecimal saldo = item.getSaldo() != null ? item.getSaldo() : BigDecimal.ZERO;
+                if (saldo.compareTo(BigDecimal.ZERO) <= 0 || saldo.compareTo(new BigDecimal("100")) >= 0) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("produto", item.getNome());
+                    map.put("saldo", saldo);
+                    map.put("valorUnitario", item.getValorUnitario());
+                    
+                    // Calcula valor total
+                    BigDecimal valorUnitario = item.getValorUnitario() != null ? item.getValorUnitario() : BigDecimal.ZERO;
+                    map.put("valorTotalItem", saldo.multiply(valorUnitario)); 
+                    
+                    map.put("percentualNivelAtingido", saldo + "%");
+                    map.put("status", saldo.compareTo(BigDecimal.ZERO) <= 0 ? "LIMITE MÍNIMO ATINGIDO" : "LIMITE MÁXIMO ATINGIDO");
+                    resultado.add(map);
+                }
+            }
         }
-
-        Produto produto = produtoRepository.findById(produtoId)
-                .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado com o ID informado."));
-
-        // Atualiza o saldo do produto (Saldo + Quantidade)
-        produto.setSaldo(produto.getSaldo().add(quantidade));
-        produtoRepository.save(produto);
-
-        // Registra a movimentação de entrada
-        Movimento movimento = new Movimento();
-        movimento.setProduto(produto);
-        movimento.setQtd(quantidade);
-        movimento.setDataMovto(java.time.LocalDateTime.now());
-
-        return movimentoRepository.save(movimento);
-    }
-    
-    public List<Object[]> listarMovimentacoesPorPeriodo(java.time.LocalDateTime inicio, java.time.LocalDateTime fim) {
-        return movimentoRepository.findMovimentacoesPorPeriodo(inicio, fim);
-    }
-
-    public List<Object[]> listarTopSaidasPorPeriodo(java.time.LocalDateTime inicio, java.time.LocalDateTime fim) {
-        return movimentoRepository.findTopSaidasPorPeriodo(inicio, fim);
+        
+        return resultado;
     }
 }

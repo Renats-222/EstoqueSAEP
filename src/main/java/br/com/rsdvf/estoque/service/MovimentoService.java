@@ -20,12 +20,12 @@ public class MovimentoService {
     @Autowired
     private ProdutoRepository produtoRepository;
 
-    // Item 5: Listar saídas (qtd < 0 em ordem decrescente)
+    //Listar saídas (qtd < 0 em ordem decrescente)
     public List<Movimento> listarTodasSaidas() {
         return movimentoRepository.findAllSaidasOrderByDataMovtoDesc();
     }
 
-    // Item 5: Registrar entrada de produtos e atualizar saldo
+    //Registrar entrada de produtos e atualizar saldo
     public Movimento registrarEntrada(Long produtoId, BigDecimal quantidade) {
         if (quantidade == null || quantidade.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("A quantidade de entrada deve ser maior que zero.");
@@ -45,12 +45,10 @@ public class MovimentoService {
         return movimentoRepository.save(movimento);
     }
 
-    // Item 6: Listar movimentações por período
     public List<Object[]> listarMovimentacoesPorPeriodo(LocalDateTime inicio, LocalDateTime fim) {
         return movimentoRepository.findMovimentacoesPorPeriodo(inicio, fim);
     }
 
-    // Item 7: Listar top saídas por período
     public List<Object[]> listarTopSaidasPorPeriodo(LocalDateTime inicio, LocalDateTime fim) {
         return movimentoRepository.findTopSaidasPorPeriodo(inicio, fim);
     }

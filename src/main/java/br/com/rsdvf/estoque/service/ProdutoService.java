@@ -1,7 +1,11 @@
 package br.com.rsdvf.estoque.service;
 
+import br.com.rsdvf.estoque.dto.ProdutoRequestDTO;
+import br.com.rsdvf.estoque.dto.ProdutoResponseDTO;
+import br.com.rsdvf.estoque.model.Categoria;
 import br.com.rsdvf.estoque.model.Produto;
 import br.com.rsdvf.estoque.model.VwEstoque;
+import br.com.rsdvf.estoque.repository.CategoriaRepository;
 import br.com.rsdvf.estoque.repository.ProdutoRepository;
 import br.com.rsdvf.estoque.repository.VwEstoqueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,46 +16,77 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
-public class EstoqueService {
+public class ProdutoService {
 
     @Autowired
     private ProdutoRepository produtoRepository;
 
     @Autowired
+    private CategoriaRepository categoriaRepository;
+
+    @Autowired
     private VwEstoqueRepository vwEstoqueRepository;
 
-    // Regra de Negócio: Validações para cadastro de produto
-    public Produto cadastrarProduto(Produto produto) {
-        if (produto.getValorUnitario() == null || produto.getValorUnitario().compareTo(BigDecimal.ZERO) <= 0) {
+    // DTO: Validações para cadastro de produto
+    public ProdutoResponseDTO cadastrarProduto(ProdutoRequestDTO dto) {
+        if (dto.getValorUnitario() == null || dto.getValorUnitario().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("O valor unitário deve ser maior que zero.");
         }
-        if (produto.getSaldo() == null || produto.getSaldo().compareTo(BigDecimal.ZERO) < 0) {
+        if (dto.getSaldo() == null || dto.getSaldo().compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("A quantidade inicial não pode ser negativa.");
         }
-        if (produto.getCategoria() == null || produto.getCategoria().getId() == null) {
-            throw new IllegalArgumentException("É obrigatório informar uma categoria válida para o produto.");
+        if (dto.getCategoriaId() == null) {
+            throw new IllegalArgumentException("É obrigatório informar o ID de uma categoria válida.");
         }
-        return produtoRepository.save(produto);
+
+        Categoria categoria = categoriaRepository.findById(dto.getCategoriaId())
+                .orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada no banco de dados."));
+
+        // Converte DTO para Entidade
+        Produto produto = new Produto();
+        produto.setNome(dto.getNome());
+        produto.setSaldo(dto.getSaldo());
+        produto.setValorUnitario(dto.getValorUnitario());
+        produto.setCategoria(categoria);
+
+        Produto produtoSalvo = produtoRepository.save(produto);
+
+        return converterParaResponseDTO(produtoSalvo);
     }
 
-    // Listar todos os produtos
-    public List<Produto> listarTodosProdutos() {
-        return produtoRepository.findAll();
+    // DTO: Listar todos os produtos
+    public List<ProdutoResponseDTO> listarTodosProdutos() {
+        return produtoRepository.findAll().stream()
+                .map(this::converterParaResponseDTO)
+                .collect(Collectors.toList());
+    }
+    
+    // Método auxiliar para converter Entidade em DTO
+    private ProdutoResponseDTO converterParaResponseDTO(Produto produto) {
+        ProdutoResponseDTO dto = new ProdutoResponseDTO();
+        dto.setId(produto.getId());
+        dto.setNome(produto.getNome());
+        dto.setSaldo(produto.getSaldo());
+        dto.setValorUnitario(produto.getValorUnitario());
+        if (produto.getCategoria() != null) {
+            dto.setNomeCategoria(produto.getCategoria().getCategoria()); // Pega o nome ao invés do objeto inteiro
+        }
+        return dto;
     }
 
-    // Listar valor total por categoria
+    // Listar valor total por categoria (MANTÉM IGUAL)
     public List<Object[]> listarValorTotalPorCategoria() {
         return produtoRepository.findValorTotalPorCategoria();
     }
 
-    // Item 8: Identificar limites mínimos (0) e máximos (100) com percentual e Fallback
+    // Item 8: Identificar limites mínimos e máximos (MANTÉM IGUAL)
     public List<Map<String, Object>> listarLimitesEstoque() {
         List<VwEstoque> listaView = vwEstoqueRepository.findAll();
         List<Map<String, Object>> resultado = new ArrayList<>();
 
-        // 1. TENTA USAR A VIEW: Exigência da Prova SAEP
         if (!listaView.isEmpty()) {
             for (VwEstoque item : listaView) {
                 BigDecimal saldo = item.getSaldo() != null ? item.getSaldo() : BigDecimal.ZERO;
@@ -66,9 +101,7 @@ public class EstoqueService {
                     resultado.add(map);
                 }
             }
-        } 
-        // 2. FALLBACK: Se a view no banco falhar ou vier vazia, busca direto da tabela Produto (Garante que a API funcione!)
-        else {
+        } else {
             List<Produto> listaProdutos = produtoRepository.findAll();
             for (Produto item : listaProdutos) {
                 BigDecimal saldo = item.getSaldo() != null ? item.getSaldo() : BigDecimal.ZERO;
@@ -78,7 +111,6 @@ public class EstoqueService {
                     map.put("saldo", saldo);
                     map.put("valorUnitario", item.getValorUnitario());
                     
-                    // Calcula valor total
                     BigDecimal valorUnitario = item.getValorUnitario() != null ? item.getValorUnitario() : BigDecimal.ZERO;
                     map.put("valorTotalItem", saldo.multiply(valorUnitario)); 
                     
@@ -88,7 +120,6 @@ public class EstoqueService {
                 }
             }
         }
-        
         return resultado;
     }
 }

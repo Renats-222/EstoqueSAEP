@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstoqueControl - Gerenciamento de Estoque</title>
+    <!-- Font Awesome para os Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonte Inter do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>EstoqueControl</span>
+            </div>
+            <button class="btn-add">
+                <i class="fa-solid fa-plus"></i>
+                Novo Produto
+            </button>
+        </header>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Saldo</th>
+                        <th>Valor Unitário</th>
+                        <th>Valor Total</th>
+                        <th style="text-align: center;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela">
+                    <!-- Os dados vindos do banco serão injetados aqui via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        async function carregaProdutos() {
+            try {
+                const res = await fetch('/Natin/produtos');
+                const produtos = await res.json();
+
+                const html = produtos.map(item => `
+                    <tr>
+                        <td style="font-weight: 500; color: #fff;">${item.nome}</td>
+                        <td><span class="badge">${item.categoria ? item.categoria.categoria : ''}</span></td>
+                        <td>${item.saldo} un</td>
+                        <td>R$ ${item.valorUnitario}</td>
+                        <td class="total-value">R$ ${(item.valorUnitario * item.saldo).toFixed(2)}</td>
+                        <td>
+                            <div class="actions" style="justify-content: center;">
+                                <button class="action-btn edit" title="Editar"><i class="fa-regular fa-pen-to-square"></i></button>
+                                <button class="action-btn report" title="Relatório"><i class="fa-regular fa-file-lines"></i></button>
+                                <button class="action-btn delete" title="Excluir"><i class="fa-regular fa-trash-can"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+        
+                document.getElementById("corpoTabela").innerHTML = html;
+
+            } catch (erro) {
+                console.error('Erro na requisição:', erro);
+            }
+        }
+
+        carregaProdutos();
+    </script>
+
+</body>
+</html>

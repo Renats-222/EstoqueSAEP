@@ -15,6 +15,11 @@
                 <exec.appArgs></exec.appArgs>
                 <exec.mainClass>br.com.rsdvf.estoque.EstoqueApplication</exec.mainClass>
                 <exec.executable>java</exec.executable>
+                <Env.APP_ENVIRONMENT>postgres</Env.APP_ENVIRONMENT>
+                <Env.POSTGRES_HOST>172.16.5.6</Env.POSTGRES_HOST>
+                <Env.POSTGRES_USER>renato</Env.POSTGRES_USER>
+                <Env.POSTGRES_PASSWORD>aluno6</Env.POSTGRES_PASSWORD>
+                <Env.POSTGRES_DB>estoqueDB</Env.POSTGRES_DB>
                 
                 
                 
